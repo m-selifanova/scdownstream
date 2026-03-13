@@ -10,6 +10,7 @@ include { UNIFY                                                                 
 include { SCANPY_FILTER                                                              } from '../../../modules/local/scanpy/filter'
 include { SCANPY_SAMPLE                                                              } from '../../../modules/local/scanpy/sample'
 include { DOUBLET_DETECTION                                                          } from '../doublet_detection'
+include { SEX_PREDICTION                                                             } from '../../../modules/local/scanpy/sexprediction'
 include { SCANPY_PLOTQC as QC_FILTERED                                               } from '../../../modules/local/scanpy/plotqc'
 include { CUSTOM_COLLECTSIZES as COLLECT_SIZES                                       } from '../../../modules/local/custom/collectsizes'
 
@@ -27,11 +28,15 @@ workflow QUALITY_CONTROL {
     mito_genes                    //   value: string (path) or null
     sample_n                      //   value: string (integer > 1 or null)
     sample_fraction               //   value: string (float between 0-1 or null)
+    sex_prediction                //   value: boolean
+    sex_marker_genes              //   path: file or []
+    sex_marker_genes_m            //   path: file or []
 
     main:
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
     ch_sizes = channel.empty()
+    ch_obs = channel.empty()
 
     GET_UNFILTERED_SIZE (
         ch_h5ad
@@ -216,6 +221,24 @@ workflow QUALITY_CONTROL {
     ch_multiqc_files = ch_multiqc_files.mix(QC_FILTERED.out.multiqc_files)
     ch_versions = ch_versions.mix(QC_FILTERED.out.versions)
 
+    if (sex_prediction) {
+        ch_sex = ch_h5ad.multiMap {
+            meta, h5ad ->
+            h5ad: [meta, h5ad]
+            symbol_col: meta.symbol_col ?: "index"
+        }
+
+        SEX_PREDICTION (
+            ch_sex.h5ad,
+            sex_marker_genes ?: [],
+            ch_sex.symbol_col
+        )
+
+        ch_h5ad = SEX_PREDICTION.out.h5ad
+        ch_obs = ch_obs.mix(SEX_PREDICTION.out.obs)
+        ch_versions = ch_versions.mix(SEX_PREDICTION.out.versions)
+    }
+
     ch_sizes = ch_sizes
         .collectFile(
             seed: "sample\tstate\tsize",
@@ -232,6 +255,7 @@ workflow QUALITY_CONTROL {
 
     emit:
     h5ad          = ch_h5ad          // channel: [ meta, h5ad ]
+    obs           = ch_obs           // channel: [ meta, obs_fragment ]
     multiqc_files = ch_multiqc_files // channel: [ json ]
     versions      = ch_versions      // channel: [ versions.yml ]
 }
