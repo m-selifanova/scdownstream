@@ -40,6 +40,8 @@ workflow SCDOWNSTREAM {
     mito_genes                    //   value: string
     sample_n                      //   value: string
     sample_fraction               //   value: string
+    sex_prediction                //   value: boolean
+    sex_marker_genes              //    path: file or []
     qc_only                       //   value: boolean
     celldex_reference             //   value: string
     celltypist_model              //   value: string
@@ -117,9 +119,8 @@ workflow SCDOWNSTREAM {
             mito_genes,
             sample_n,
             sample_fraction,
-            params.sex_prediction,
-            params.sex_marker_genes
-            params.sex_marker_genes_m
+            sex_prediction,
+            sex_marker_genes,
         )
         ch_versions = ch_versions.mix(QUALITY_CONTROL.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(QUALITY_CONTROL.out.multiqc_files)

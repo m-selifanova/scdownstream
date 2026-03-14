@@ -30,7 +30,6 @@ workflow QUALITY_CONTROL {
     sample_fraction               //   value: string (float between 0-1 or null)
     sex_prediction                //   value: boolean
     sex_marker_genes              //   path: file or []
-    sex_marker_genes_m            //   path: file or []
 
     main:
     ch_versions = channel.empty()
@@ -231,7 +230,6 @@ workflow QUALITY_CONTROL {
         SEX_PREDICTION (
             ch_sex.h5ad,
             sex_marker_genes,
-            sex_marker_genes_m,
             ch_sex.symbol_col
         )
 

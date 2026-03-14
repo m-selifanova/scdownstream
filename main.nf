@@ -42,6 +42,8 @@ workflow NFCORE_SCDOWNSTREAM {
     mito_genes                    //   value: string
     sample_n                      //   value: string
     sample_fraction               //   value: string
+    sex_prediction                //   value: boolean
+    sex_marker_genes              //   value: path: file or []
     qc_only                       //   value: boolean
     celldex_reference             //   value: string
     celltypist_model              //   value: string
@@ -90,6 +92,8 @@ workflow NFCORE_SCDOWNSTREAM {
         mito_genes,
         sample_n,
         sample_fraction,
+        sex_prediction,
+        sex_marker_genes,
         qc_only,
         celldex_reference,
         celltypist_model,
@@ -152,6 +156,9 @@ workflow {
     ch_base_adata = params.base_adata
             ? channel.value([[id: "base"], file(params.base_adata, checkIfExists: true)])
             : channel.value([[], []])
+    def sex_marker_genes_file = params.sex_prediction
+            ? file(params.sex_marker_genes ?: "${projectDir}/assets/sex_marker_genes/${params.species}_sex_marker_genes.txt", checkIfExists: true)
+            : []
     NFCORE_SCDOWNSTREAM (
         PIPELINE_INITIALISATION.out.samplesheet,
         ch_base_adata,
@@ -165,6 +172,8 @@ workflow {
         params.mito_genes,
         params.sample_n,
         params.sample_fraction,
+        params.sex_prediction,
+        sex_marker_genes_file,
         params.qc_only,
         params.celldex_reference,
         params.celltypist_model,
