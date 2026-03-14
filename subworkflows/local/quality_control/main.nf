@@ -36,7 +36,7 @@ workflow QUALITY_CONTROL {
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
     ch_sizes = channel.empty()
-    ch_obs = channel.empty()
+    ch_obs_per_sample = channel.empty()
 
     GET_UNFILTERED_SIZE (
         ch_h5ad
@@ -230,12 +230,12 @@ workflow QUALITY_CONTROL {
 
         SEX_PREDICTION (
             ch_sex.h5ad,
-            sex_marker_genes ?: [],
+            sex_marker_genes,
+            sex_marker_genes_m,
             ch_sex.symbol_col
         )
 
-        ch_h5ad = SEX_PREDICTION.out.h5ad
-        ch_obs = ch_obs.mix(SEX_PREDICTION.out.obs)
+        ch_obs_per_sample = ch_obs_per_sample.mix(SEX_PREDICTION.out.obs)
         ch_versions = ch_versions.mix(SEX_PREDICTION.out.versions)
     }
 
@@ -255,7 +255,7 @@ workflow QUALITY_CONTROL {
 
     emit:
     h5ad          = ch_h5ad          // channel: [ meta, h5ad ]
-    obs           = ch_obs           // channel: [ meta, obs_fragment ]
+    obs           = ch_obs_per_sample           // channel: [ meta, obs_fragment ]
     multiqc_files = ch_multiqc_files // channel: [ json ]
     versions      = ch_versions      // channel: [ versions.yml ]
 }
