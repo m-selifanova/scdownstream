@@ -44,6 +44,9 @@ workflow NFCORE_SCDOWNSTREAM {
     sample_fraction               //   value: string
     sex_prediction                //   value: boolean
     sex_marker_genes              //   value: path: file or []
+    cell_cycle_scoring            //   value: boolean
+    s_genes                       //    path: file or []
+    g2m_genes                     //    path: file or []
     qc_only                       //   value: boolean
     celldex_reference             //   value: string
     celltypist_model              //   value: string
@@ -94,6 +97,9 @@ workflow NFCORE_SCDOWNSTREAM {
         sample_fraction,
         sex_prediction,
         sex_marker_genes,
+        cell_cycle_scoring,
+        s_genes,
+        g2m_genes,
         qc_only,
         celldex_reference,
         celltypist_model,
@@ -156,9 +162,17 @@ workflow {
     ch_base_adata = params.base_adata
             ? channel.value([[id: "base"], file(params.base_adata, checkIfExists: true)])
             : channel.value([[], []])
+    
     def sex_marker_genes_file = params.sex_prediction
             ? file(params.sex_marker_genes ?: "${projectDir}/assets/sex_marker_genes/${params.species}_sex_marker_genes.txt", checkIfExists: true)
             : []
+    def s_genes_file = params.cell_cycle_scoring
+        ? file(params.s_genes ?: "${projectDir}/assets/cell_cycle_genes/${params.species}_s_genes.txt", checkIfExists: true)
+        : []
+    def g2m_genes_file = params.cell_cycle_scoring
+        ? file(params.g2m_genes ?: "${projectDir}/assets/cell_cycle_genes/${params.species}_g2m_genes.txt", checkIfExists: true)
+        : []
+
     NFCORE_SCDOWNSTREAM (
         PIPELINE_INITIALISATION.out.samplesheet,
         ch_base_adata,
@@ -174,6 +188,9 @@ workflow {
         params.sample_fraction,
         params.sex_prediction,
         sex_marker_genes_file,
+        params.cell_cycle_scoring,
+        s_genes_file,
+        g2m_genes_file,
         params.qc_only,
         params.celldex_reference,
         params.celltypist_model,
